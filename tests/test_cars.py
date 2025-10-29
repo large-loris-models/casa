@@ -1,6 +1,8 @@
 from casa import LLM, Grammar, CARS
 
-llm = LLM.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
+llm = LLM.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+# 或
+# llm = LLM.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
 
 grammar_str = """
 start: CHARACTER " " ACTION " " LOCATION "."
