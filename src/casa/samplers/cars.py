@@ -4,6 +4,7 @@ from typing import List, Optional
 import torch
 
 from casa.samplers.base import SamplingResult
+from casa.utils.draw import draw_probs
 from casa.utils.oracle_trie import Trie
 from casa.utils.helpers import print_progress
 
@@ -134,7 +135,9 @@ class CARS:
             if not torch.isfinite(probs).all() or probs.sum() < 1e-10:
                 self.logits_process_time += time.time() - start_time
                 return None
-            next_token = torch.multinomial(probs, 1).item()
+            # Not torch.multinomial: its CPU path can return a token of negligible probability
+            # about once per 130 draws at this vocabulary size (see casa.utils.draw).
+            next_token = draw_probs(probs)
 
             raw_lps.append(raw[next_token].item())
             cons_lps.append(torch.log_softmax(sampling_logits, dim=-1)[next_token].item())
