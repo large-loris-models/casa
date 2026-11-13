@@ -1,6 +1,6 @@
 ![CASA](logo.png)
 
-Constrained aligned sampling algorithms for language models via CARS, ASAp, GCD, MCMC, and rejection sampling variants.
+Constrained aligned sampling algorithms for language models via CARS, MARS, ASAp, GCD, MCMC, and rejection sampling variants.
 
 ## Installation
 
@@ -99,6 +99,7 @@ A GBNF grammar runs on both engines, making them directly comparable.
 ## Available Samplers
 
 - **CARS**: Constrained Adaptive Rejection Sampling. Exact samples from the grammar-conditioned LM distribution; learns from rejections and constrains the first token.
+- **MARS**: Modular Adaptive Rejection Sampling. Exact samples from combinations of models (products, generalized means, verifier reweighting, grammar constraints) built with an algebra of envelopes; its rejection rate decreases across draws. Reduces to CARS on a hard constraint.
 - **MCMC**: Markov Chain Monte Carlo sampling. Avaliable variants,
   - _Uniform_ - Randomly resamples from any position. Balances exploration with structural preservation.
   - _Priority_ - Resample higher perplexity regions first. Targets uncertain tokens for refinement.
@@ -119,6 +120,18 @@ sampler = GCD(llm, grammar, max_new_tokens=32)
 results = sampler.sample(prompt, n_samples=10)
 ```
 
+MARS takes a *target* instead of `(llm, grammar)`: an expression built with `casa.algebra`. A grammar constraint is one such expression, so the CARS target is a special case.
+
+```python
+from casa import MARS
+from casa.algebra import Model, constrain, intersect
+from casa.utils.envelope_runtime import grammar_mask
+
+target = constrain(Model(llm), grammar_mask(grammar))                 # the CARS target
+target = intersect(Model(llm, prompt=p1), Model(llm, prompt=p2))      # probable under both prompts
+results = MARS(target, max_new_tokens=32).sample(prompt, n_samples=10)
+```
+
 ## Running Tests
 
 ```bash
@@ -127,6 +140,10 @@ python tests/test_cars.py
 
 # Or other samplers
 python tests/test_mcmc.py
+python tests/test_mars.py
+
+# Exactness checks on small tabular models (no model download, no GPU)
+pytest tests/test_mars_exact.py tests/test_draw.py
 ```
 
 ## References
@@ -136,6 +153,10 @@ CASA implements the following algorithms from:
 - **RS, ARS, RSFT, CARS**  
   _Constrained Adaptive Rejection Sampling_  
   Preprint | [arXiv:2510.01902](https://arxiv.org/abs/2510.01902)
+
+- **MARS**  
+  _Modular Adaptive Rejection Sampling_  
+  Preprint | arXiv: TBD
 
 - **ASAp**  
   _Grammar-Aligned Decoding_  
